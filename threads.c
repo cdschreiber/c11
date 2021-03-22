@@ -1,3 +1,10 @@
+/*
+ *  Copyright (c) 2015-2021 Christoph Schreiber
+ *
+ *  Distributed under the Boost Software License, Version 1.0.
+ *  (http://www.boost.org/LICENSE_1_0.txt)
+ */
+
 #include <c11/threads.h>
 
 #if defined(HAVE_THREADS_H_WORKAROUND)
@@ -181,7 +188,7 @@ int mtx_unlock(mtx_t* mtx)
 int cnd_timedwait(cnd_t* cond, mtx_t* mtx, const struct timespec* ts)
 {
     mtx->thrdid = INVALID_THRDID;
-	mtx->count--;
+    mtx->count--;
     DWORD msec = INFINITE;
     if (ts)
     {
@@ -201,7 +208,7 @@ int cnd_timedwait(cnd_t* cond, mtx_t* mtx, const struct timespec* ts)
             ret = thrd_error;
     }
     mtx->thrdid = GetCurrentThreadId();
-	mtx->count++;
+    mtx->count++;
     return ret;
 }
 

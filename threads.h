@@ -1,6 +1,13 @@
 #ifndef __THREADS_H__
 #define __THREADS_H__
 
+/*
+ *  Copyright (c) 2015-2021 Christoph Schreiber
+ *
+ *  Distributed under the Boost Software License, Version 1.0.
+ *  (http://www.boost.org/LICENSE_1_0.txt)
+ */
+
 #include <c11/_cdefs.h>
 
 #if defined(HAVE_THREADS_H)
@@ -235,7 +242,7 @@ static inline void cnd_destroy(cnd_t* cond)
 static inline int cnd_init(cnd_t* cond)
 {
     InitializeConditionVariable(cond);
-	return thrd_success;
+    return thrd_success;
 }
 
 static inline int cnd_signal(cnd_t* cond)
@@ -339,7 +346,7 @@ int mtx_unlock(mtx_t* mtx);
 static inline int thrd_create(thrd_t* thr, thrd_start_t func, void* arg)
 {
     int res = pthread_create(thr, 0, (void*(*)(void*))func, arg);
-	if (res == 0)
+    if (res == 0)
         return thrd_success;
     return (res == ENOMEM) ? thrd_nomem : thrd_error;
 }
