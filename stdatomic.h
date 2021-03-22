@@ -1,29 +1,27 @@
 #ifndef __STDATOMIC_H__
 #define __STDATOMIC_H__
 
-/*
- *  Copyright (c) 2015-2021 Christoph Schreiber
- *
- *  Distributed under the Boost Software License, Version 1.0.
- *  (http://www.boost.org/LICENSE_1_0.txt)
- */
+#include <c11/_cdefs.h>
 
-#if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 201112L) \
-    && !defined(__STDC_NO_ATOMICS__)
+#if defined(HAVE_STDATOMIC_H)
 #   include <stdatomic.h>
-#elif defined(_MSC_VER) && (_MSC_VER >= 1800) /* Visual Studio 2013 */ \
-    && (defined(_M_X64) || defined(_M_IX86))
-#   define USE_TEMPORARY_MSVC_WORKAROUND 1
+#elif defined(_MSC_VER)
+#   define HAVE_STDATOMIC_H_WORKAROUND 1
 #else
-#   error Atomic operations are not supported on your platform
-#endif /* defined(__STDC_VERSION__) ... */
+#   error Atomic operations are not supported on your platform!
+#endif /* defined(HAVE_STDATOMIC_H) */
 
-#if defined(USE_TEMPORARY_MSVC_WORKAROUND)
+#if defined(HAVE_STDATOMIC_H_WORKAROUND)
 
 #include <stdbool.h>
 #include <stdint.h>
 #include <assert.h>
 #include <intrin.h>
+
+#if defined(__INTEL_COMPILER)
+// #1879: unimplemented pragma ignored
+#   pragma warning(disable: 1879)
+#endif /* defined(__INTEL_COMPILER)*/
 
 #pragma intrinsic(_ReadWriteBarrier)
 #pragma intrinsic(_InterlockedIncrement)
@@ -221,221 +219,82 @@ typedef _Atomic(uintmax_t)          atomic_uintmax_t;
 #define atomic_fetch_and(obj, desired) \
     atomic_fetch_and_explicit((obj), (desired), memory_order_seq_cst)
 
-#if (_MSC_VER >= 1928)
-
 /*
- *  Visual Studio 2019 version 16.8
- *
- *  _Generic - Starting in Visual Studio 2019 version 16.8, this
- *  keyword is supported in code compiled as C when the /std:c11
- *  or /std:c17 compiler options are specified.
- */
-
-#define atomic_store_explicit(obj, desired, order) \
-    _Generic(*(obj), \
-        char: atomic_store_char, \
-        unsigned char: atomic_store_uchar, \
-        bool: atomic_store_bool, \
-        short: atomic_store_short, \
-        unsigned short: atomic_store_ushort, \
-        int: atomic_store_int, \
-        unsigned int: atomic_store_uint, \
-        long: atomic_store_long, \
-        unsigned long: atomic_store_ulong, \
-        __int64: atomic_store_llong, \
-        unsigned __int64: atomic_store_ullong, \
-        default: atomic_store_ptr) \
-    ((obj), (desired), (order))
-
-#define atomic_load_explicit(obj, order) \
-    _Generic(*(obj), \
-        char: atomic_load_char, \
-        unsigned char: atomic_load_uchar, \
-        bool: atomic_load_bool, \
-        short: atomic_load_short, \
-        unsigned short: atomic_load_ushort, \
-        int: atomic_load_int, \
-        unsigned int: atomic_load_uint, \
-        long: atomic_load_long, \
-        unsigned long: atomic_load_ulong, \
-        __int64: atomic_load_llong, \
-        unsigned __int64: atomic_load_ullong, \
-        default: atomic_load_ptr) \
-    ((obj), (order))
-
-#define atomic_exchange_explicit(obj, desired, order) \
-    _Generic(*(obj), \
-        char: atomic_exchange_char, \
-        unsigned char: atomic_exchange_uchar, \
-        bool: atomic_exchange_bool, \
-        short: atomic_exchange_short, \
-        unsigned short: atomic_exchange_ushort, \
-        int: atomic_exchange_int, \
-        unsigned int: atomic_exchange_uint, \
-        long: atomic_exchange_long, \
-        unsigned long: atomic_exchange_ulong, \
-        __int64: atomic_exchange_llong, \
-        unsigned __int64: atomic_exchange_ullong, \
-        default: atomic_exchange_ptr) \
-    ((obj), (desired), (order))
-
-#define atomic_compare_exchange_strong_explicit(obj, expected \
-    , desired, success, failure) \
-    _Generic(*(obj), \
-        char: atomic_compare_exchange_char, \
-        unsigned char: atomic_compare_exchange_uchar, \
-        short: atomic_compare_exchange_short, \
-        unsigned short: atomic_compare_exchange_ushort, \
-        long: atomic_compare_exchange_long, \
-        unsigned long: atomic_compare_exchange_ulong, \
-        int: atomic_compare_exchange_int, \
-        unsigned int: atomic_compare_exchange_uint, \
-        __int64: atomic_compare_exchange_llong, \
-        unsigned __int64: atomic_compare_exchange_ullong, \
-        default: atomic_compare_exchange_ptr) \
-    ((obj), (expected), (desired), (success), (failure))
-
-#define atomic_compare_exchange_weak_explicit \
-    atomic_compare_exchange_strong_explicit
-
-#define atomic_fetch_add_explicit(obj, op, order) \
-    _Generic(*(obj), \
-        char: atomic_fetch_add_char, \
-        unsigned char: atomic_fetch_add_uchar, \
-        short: atomic_fetch_add_short, \
-        unsigned short: atomic_fetch_add_ushort, \
-        int: atomic_fetch_add_int, \
-        unsigned int: atomic_fetch_add_uint, \
-        long: atomic_fetch_add_long, \
-        unsigned long: atomic_fetch_add_ulong, \
-        __int64: atomic_fetch_add_llong, \
-        unsigned __int64: atomic_fetch_add_ullong) \
-    ((obj), (op), (order))
-
-#define atomic_fetch_sub_explicit(obj, op, order) \
-    _Generic(*(obj), \
-        char: atomic_fetch_sub_char, \
-        unsigned char: atomic_fetch_sub_uchar, \
-        short: atomic_fetch_sub_short, \
-        unsigned short: atomic_fetch_sub_ushort, \
-        int: atomic_fetch_sub_int, \
-        unsigned int: atomic_fetch_sub_uint, \
-        long: atomic_fetch_sub_long, \
-        unsigned long: atomic_fetch_sub_ulong, \
-        __int64: atomic_fetch_sub_llong, \
-        unsigned __int64: atomic_fetch_sub_ullong) \
-    ((obj), (op), (order))
-
-#define atomic_fetch_or_explicit(obj, op, order) \
-    _Generic(*(obj), \
-        char: atomic_fetch_or_char, \
-        unsigned char: atomic_fetch_or_uchar, \
-        short: atomic_fetch_or_short, \
-        unsigned short: atomic_fetch_or_ushort, \
-        int: atomic_fetch_or_int, \
-        unsigned int: atomic_fetch_or_uint, \
-        long: atomic_fetch_or_long, \
-        unsigned long: atomic_fetch_or_ulong, \
-        __int64: atomic_fetch_or_llong, \
-        unsigned __int64: atomic_fetch_or_ullong) \
-    ((obj), (op), (order))
-
-#define atomic_fetch_xor_explicit(obj, op, order) \
-    _Generic(*(obj), \
-        char: atomic_fetch_xor_char, \
-        unsigned char: atomic_fetch_xor_uchar, \
-        short: atomic_fetch_xor_short, \
-        unsigned short: atomic_fetch_xor_ushort, \
-        int: atomic_fetch_xor_int, \
-        unsigned int: atomic_fetch_xor_uint, \
-        long: atomic_fetch_xor_long, \
-        unsigned long: atomic_fetch_xor_ulong, \
-        __int64: atomic_fetch_xor_llong, \
-        unsigned __int64: atomic_fetch_xor_ullong) \
-    ((obj), (op), (order))
-
-#define atomic_fetch_and_explicit(obj, op, order) \
-    _Generic(*(obj), \
-        char: atomic_fetch_and_char, \
-        unsigned char: atomic_fetch_and_uchar, \
-        short: atomic_fetch_and_short, \
-        unsigned short: atomic_fetch_and_ushort, \
-        int: atomic_fetch_and_int, \
-        unsigned int: atomic_fetch_and_uint, \
-        long: atomic_fetch_and_long, \
-        unsigned long: atomic_fetch_and_ulong, \
-        __int64: atomic_fetch_and_llong, \
-        unsigned __int64: atomic_fetch_and_ullong) \
-    ((obj), (op), (order))
-
-#else /* (_MSC_VER < 1928) */
-
-/*
- *  C4047: type1 differs in levels of indirection from type2
+ *  #279: controlling expression is constant
+ *  C4047: 'type1' differs in levels of indirection from 'type2'
+ *  C4305: 'type cast': truncation from 'type1' to 'type2'
  *  C4310: cast truncates constant value
  */
 
+#if defined(__INTEL_COMPILER)
+#   define SUPPRESS_MSVC_OR_INTEL_WARNING \
+    __pragma(warning(suppress: 279))
+#else
+#   define SUPPRESS_MSVC_OR_INTEL_WARNING \
+    __pragma(warning(suppress: 4047 4305 4310))
+#endif /* defined(__INTEL_COMPILER) */
+
 #define atomic_store_explicit(obj, desired, order) \
-    __pragma(warning(suppress: 4310)) \
+    SUPPRESS_MSVC_OR_INTEL_WARNING \
     ((sizeof(*(obj)) == 1U) \
-    ? (atomic_store_char((atomic_char*)(obj) \
+    ? (atomic_store_1((atomic_char*)(obj) \
         , (char)(intptr_t)(desired), (order)), 0) \
     : ((sizeof(*(obj)) == 2U) \
-    ? (atomic_store_short((atomic_short*)(obj) \
+    ? (atomic_store_2((atomic_short*)(obj) \
         , (short)(intptr_t)(desired), (order)), 0) \
     : ((sizeof(*(obj)) == 4U) \
-    ? (atomic_store_long((atomic_long*)(obj) \
+    ? (atomic_store_4((atomic_long*)(obj) \
         , (long)(intptr_t)(desired), (order)), 0) \
     : ((sizeof(*(obj)) == 8U) \
-    ? (atomic_store_llong((atomic_llong*)(obj) \
+    ? (atomic_store_8((atomic_llong*)(obj) \
         , (__int64)(desired), (order)), 0) \
     : (assert(!"Invalid type"), 0)))))
 
 #define atomic_load_explicit(obj, order) \
-    __pragma(warning(suppress: 4047)) \
+    SUPPRESS_MSVC_OR_INTEL_WARNING \
     ((sizeof(*(obj)) == 1U) \
-    ? atomic_load_char((atomic_char*)(obj), (order)) \
+    ? atomic_load_1((atomic_char*)(obj), (order)) \
     : ((sizeof(*(obj)) == 2U) \
-    ? atomic_load_short((atomic_short*)(obj), (order)) \
+    ? atomic_load_2((atomic_short*)(obj), (order)) \
     : ((sizeof(*(obj)) == 4U) \
-    ? atomic_load_long((atomic_long*)(obj), (order)) \
+    ? atomic_load_4((atomic_long*)(obj), (order)) \
     : ((sizeof(*(obj)) == 8U) \
-    ? atomic_load_llong((atomic_llong*)(obj), (order)) \
+    ? atomic_load_8((atomic_llong*)(obj), (order)) \
     : (assert(!"Invalid type"), 0)))))
 
 #define atomic_exchange_explicit(obj, desired, order) \
-    __pragma(warning(suppress: 4047 4310)) \
+    SUPPRESS_MSVC_OR_INTEL_WARNING \
     ((sizeof(*(obj)) == 1U) \
-    ? atomic_exchange_char((atomic_char*)(obj) \
+    ? atomic_exchange_1((atomic_char*)(obj) \
         , (char)(intptr_t)(desired), (order)) \
     : ((sizeof(*(obj)) == 2U) \
-    ? atomic_exchange_short((atomic_short*)(obj) \
+    ? atomic_exchange_2((atomic_short*)(obj) \
         , (short)(intptr_t)(desired), (order)) \
     : ((sizeof(*(obj)) == 4U) \
-    ? atomic_exchange_long((atomic_long*)(obj) \
+    ? atomic_exchange_4((atomic_long*)(obj) \
         , (long)(intptr_t)(desired), (order)) \
     : ((sizeof(*(obj)) == 8U) \
-    ? atomic_exchange_llong((atomic_llong*)(obj) \
+    ? atomic_exchange_8((atomic_llong*)(obj) \
         , (__int64)(desired), (order)) \
     : (assert(!"Invalid type"), 0)))))
 
 #define atomic_compare_exchange_strong_explicit(obj, expected \
     , desired, success, failure) \
-    __pragma(warning(suppress: 4310)) \
+    SUPPRESS_MSVC_OR_INTEL_WARNING \
     ((sizeof(*(obj)) == 1U) \
-    ? atomic_compare_exchange_char( \
+    ? atomic_compare_exchange_1( \
         (atomic_char*)(obj), (char*)(expected) \
         , (char)(intptr_t)(desired), (success), (failure)) \
     : ((sizeof(*(obj)) == 2U) \
-    ? atomic_compare_exchange_short( \
+    ? atomic_compare_exchange_2( \
         (atomic_short*)(obj), (short*)(expected) \
         , (short)(intptr_t)(desired), (success), (failure)) \
     : ((sizeof(*(obj)) == 4U) \
-    ? atomic_compare_exchange_long( \
+    ? atomic_compare_exchange_4( \
         (atomic_long*)(obj), (long*)(expected) \
         , (long)(intptr_t)(desired), (success), (failure)) \
     : ((sizeof(*(obj)) == 8U) \
-    ? atomic_compare_exchange_llong( \
+    ? atomic_compare_exchange_8( \
         (atomic_llong*)(obj), (__int64*)(expected) \
         , (__int64)(desired), (success), (failure)) \
     : (assert(!"Invalid type"), 0)))))
@@ -444,86 +303,84 @@ typedef _Atomic(uintmax_t)          atomic_uintmax_t;
     atomic_compare_exchange_strong_explicit
 
 #define atomic_fetch_add_explicit(obj, op, order) \
-    __pragma(warning(suppress: 4310)) \
+    SUPPRESS_MSVC_OR_INTEL_WARNING \
     ((sizeof(*(obj)) == 1U) \
-    ? atomic_fetch_add_char((atomic_char*)(obj) \
+    ? atomic_fetch_add_1((atomic_char*)(obj) \
         , (char)(intptr_t)(op), (order)) \
     : ((sizeof(*(obj)) == 2U) \
-    ? atomic_fetch_add_short((atomic_short*)(obj) \
+    ? atomic_fetch_add_2((atomic_short*)(obj) \
         , (short)(intptr_t)(op), (order)) \
     : ((sizeof(*(obj)) == 4U) \
-    ? atomic_fetch_add_long((atomic_long*)(obj) \
+    ? atomic_fetch_add_4((atomic_long*)(obj) \
         , (long)(intptr_t)(op), (order)) \
     : ((sizeof(*(obj)) == 8U) \
-    ? atomic_fetch_add_llong((atomic_llong*)(obj) \
+    ? atomic_fetch_add_8((atomic_llong*)(obj) \
         , (__int64)(intptr_t)(op), (order)) \
     : (assert(!"Invalid type"), 0)))))
 
 #define atomic_fetch_sub_explicit(obj, op, order) \
-    __pragma(warning(suppress: 4310)) \
+    SUPPRESS_MSVC_OR_INTEL_WARNING \
     ((sizeof(*(obj)) == 1U) \
-    ? atomic_fetch_sub_char((atomic_char*)(obj) \
+    ? atomic_fetch_sub_1((atomic_char*)(obj) \
         , (char)(intptr_t)(op), (order)) \
     : ((sizeof(*(obj)) == 2U) \
-    ? atomic_fetch_sub_short((atomic_short*)(obj) \
+    ? atomic_fetch_sub_2((atomic_short*)(obj) \
         , (short)(intptr_t)(op), (order)) \
     : ((sizeof(*(obj)) == 4U) \
-    ? atomic_fetch_sub_long((atomic_long*)(obj) \
+    ? atomic_fetch_sub_4((atomic_long*)(obj) \
         , (long)(intptr_t)(op), (order)) \
     : ((sizeof(*(obj)) == 8U) \
-    ? atomic_fetch_sub_llong((atomic_llong*)(obj) \
+    ? atomic_fetch_sub_8((atomic_llong*)(obj) \
         , (__int64)(intptr_t)(op), (order)) \
     : (assert(!"Invalid type"), 0)))))
 
 #define atomic_fetch_or_explicit(obj, op, order) \
-    __pragma(warning(suppress: 4310)) \
+    SUPPRESS_MSVC_OR_INTEL_WARNING \
     ((sizeof(*(obj)) == 1U) \
-    ? atomic_fetch_or_char((atomic_char*)(obj) \
+    ? atomic_fetch_or_1((atomic_char*)(obj) \
         , (char)(intptr_t)(op), (order)) \
     : ((sizeof(*(obj)) == 2U) \
-    ? atomic_fetch_or_short((atomic_short*)(obj) \
+    ? atomic_fetch_or_2((atomic_short*)(obj) \
         , (short)(intptr_t)(op), (order)) \
     : ((sizeof(*(obj)) == 4U) \
-    ? atomic_fetch_or_long((atomic_long*)(obj) \
+    ? atomic_fetch_or_4((atomic_long*)(obj) \
         , (long)(intptr_t)(op), (order)) \
     : ((sizeof(*(obj)) == 8U) \
-    ? atomic_fetch_or_llong((atomic_llong*)(obj) \
+    ? atomic_fetch_or_8((atomic_llong*)(obj) \
         , (__int64)(intptr_t)(op), (order)) \
     : (assert(!"Invalid type"), 0)))))
 
 #define atomic_fetch_xor_explicit(obj, op, order) \
-    __pragma(warning(suppress: 4310)) \
+    SUPPRESS_MSVC_OR_INTEL_WARNING \
     ((sizeof(*(obj)) == 1U) \
-    ? atomic_fetch_xor_char((atomic_char*)(obj) \
+    ? atomic_fetch_xor_1((atomic_char*)(obj) \
         , (char)(intptr_t)(op), (order)) \
     : ((sizeof(*(obj)) == 2U) \
-    ? atomic_fetch_xor_short((atomic_short*)(obj) \
+    ? atomic_fetch_xor_2((atomic_short*)(obj) \
         , (short)(intptr_t)(op), (order)) \
     : ((sizeof(*(obj)) == 4U) \
-    ? atomic_fetch_xor_long((atomic_long*)(obj) \
+    ? atomic_fetch_xor_4((atomic_long*)(obj) \
         , (long)(intptr_t)(op), (order)) \
     : ((sizeof(*(obj)) == 8U) \
-    ? atomic_fetch_xor_llong((atomic_llong*)(obj) \
+    ? atomic_fetch_xor_8((atomic_llong*)(obj) \
         , (__int64)(intptr_t)(op), (order)) \
     : (assert(!"Invalid type"), 0)))))
 
 #define atomic_fetch_and_explicit(obj, op, order) \
-    __pragma(warning(suppress: 4310)) \
+    SUPPRESS_MSVC_OR_INTEL_WARNING \
     ((sizeof(*(obj)) == 1U) \
-    ? atomic_fetch_and_char((atomic_char*)(obj) \
+    ? atomic_fetch_and_1((atomic_char*)(obj) \
         , (char)(intptr_t)(op), (order)) \
     : ((sizeof(*(obj)) == 2U) \
-    ? atomic_fetch_and_short((atomic_short*)(obj) \
+    ? atomic_fetch_and_2((atomic_short*)(obj) \
         , (short)(intptr_t)(op), (order)) \
     : ((sizeof(*(obj)) == 4U) \
-    ? atomic_fetch_and_long((atomic_long*)(obj) \
+    ? atomic_fetch_and_4((atomic_long*)(obj) \
         , (long)(intptr_t)(op), (order)) \
     : ((sizeof(*(obj)) == 8U) \
-    ? atomic_fetch_and_llong((atomic_llong*)(obj) \
+    ? atomic_fetch_and_8((atomic_llong*)(obj) \
         , (__int64)(intptr_t)(op), (order)) \
     : (assert(!"Invalid type"), 0)))))
-
-#endif /* (_MSC_VER >= 1928) */
 
 /*
  *  7.17.8 Atomic flag type and operations
@@ -540,10 +397,10 @@ typedef atomic_bool atomic_flag;
     atomic_flag_clear_explicit((obj), memory_order_seq_cst)
 
 #define atomic_flag_test_and_set_explicit(obj, order) \
-    atomic_exchange_bool((obj), true, (order))
+    atomic_exchange_explicit((obj), true, (order))
 
 #define atomic_flag_clear_explicit(obj, order) \
-    atomic_store_bool((obj), false, (order))
+    atomic_store_explicit((obj), false, (order))
 
 /*
  *  Microsoft Visual C++ (MSVC) specific operations
@@ -564,7 +421,7 @@ typedef atomic_bool atomic_flag;
  */
 
 static __forceinline void
-atomic_store_char(volatile atomic_char* obj, char desired
+atomic_store_1(volatile atomic_char* obj, char desired
     , memory_order order)
 {
     if (order == memory_order_seq_cst)
@@ -580,21 +437,7 @@ atomic_store_char(volatile atomic_char* obj, char desired
 }
 
 static __forceinline void
-atomic_store_uchar(volatile atomic_uchar* obj, unsigned char desired
-    , memory_order order)
-{
-    atomic_store_char((volatile atomic_char*)obj, (char)desired, order);
-}
-
-static __forceinline void
-atomic_store_bool(volatile atomic_bool* obj, bool desired
-    , memory_order order)
-{
-    atomic_store_char((volatile atomic_char*)obj, !!desired, order);
-}
-
-static __forceinline void
-atomic_store_short(volatile atomic_short* obj, short desired
+atomic_store_2(volatile atomic_short* obj, short desired
     , memory_order order)
 {
     if (order == memory_order_seq_cst)
@@ -610,14 +453,7 @@ atomic_store_short(volatile atomic_short* obj, short desired
 }
 
 static __forceinline void
-atomic_store_ushort(volatile atomic_ushort* obj, unsigned short desired
-    , memory_order order)
-{
-    atomic_store_short((volatile atomic_short*)obj, (short)desired, order);
-}
-
-static __forceinline void
-atomic_store_long(volatile atomic_long* obj, long desired
+atomic_store_4(volatile atomic_long* obj, long desired
     , memory_order order)
 {
     if (order == memory_order_seq_cst)
@@ -633,27 +469,7 @@ atomic_store_long(volatile atomic_long* obj, long desired
 }
 
 static __forceinline void
-atomic_store_ulong(volatile atomic_ulong* obj, unsigned long desired
-    , memory_order order)
-{
-    atomic_store_long((volatile atomic_long*)obj, (long)desired, order);
-}
-
-static __forceinline void
-atomic_store_int(volatile atomic_int* obj, int desired, memory_order order)
-{
-    atomic_store_long((volatile atomic_long*)obj, (long)desired, order);
-}
-
-static __forceinline void
-atomic_store_uint(volatile atomic_uint* obj, unsigned int desired
-    , memory_order order)
-{
-    atomic_store_long((volatile atomic_long*)obj, (long)desired, order);
-}
-
-static __forceinline void
-atomic_store_llong(volatile atomic_llong* obj, __int64 desired
+atomic_store_8(volatile atomic_llong* obj, __int64 desired
     , memory_order order)
 {
 #if defined(_M_IX86)
@@ -720,31 +536,12 @@ atomic_store_llong(volatile atomic_llong* obj, __int64 desired
 #endif /* defined(_M_IX86) */
 }
 
-static __forceinline void
-atomic_store_ullong(volatile atomic_ullong* obj, unsigned __int64 desired
-    , memory_order order)
-{
-    atomic_store_llong((volatile atomic_llong*)obj, (__int64)desired
-        , order);
-}
-
-static __forceinline void
-atomic_store_ptr(volatile void* obj, void* desired, memory_order order)
-{
-#if defined(_M_IX86)
-    atomic_store_long((volatile atomic_long*)obj, (long)desired, order);
-#elif defined(_M_X64)
-    atomic_store_llong((volatile atomic_llong*)obj, (__int64)desired
-        , order);
-#endif /* defined(_M_IX86) */
-}
-
 /*
  *  atomic_load_explicit
  */
 
 static __forceinline char
-atomic_load_char(const volatile atomic_char* obj, memory_order order)
+atomic_load_1(const volatile atomic_char* obj, memory_order order)
 {
     (void)order;
     char value = *obj;
@@ -752,20 +549,8 @@ atomic_load_char(const volatile atomic_char* obj, memory_order order)
     return value;
 }
 
-static __forceinline unsigned char
-atomic_load_uchar(const volatile atomic_uchar* obj, memory_order order)
-{
-    return atomic_load_char((const volatile atomic_char*)obj, order);
-}
-
-static __forceinline bool
-atomic_load_bool(const volatile atomic_bool* obj, memory_order order)
-{
-    return !!atomic_load_char((const volatile atomic_char*)obj, order);
-}
-
 static __forceinline short
-atomic_load_short(const volatile atomic_short* obj, memory_order order)
+atomic_load_2(const volatile atomic_short* obj, memory_order order)
 {
     (void)order;
     short value = *obj;
@@ -773,15 +558,8 @@ atomic_load_short(const volatile atomic_short* obj, memory_order order)
     return value;
 }
 
-static __forceinline unsigned short
-atomic_load_ushort(const volatile atomic_ushort* obj, memory_order order)
-{
-    return atomic_load_short((const volatile atomic_short*)obj
-        , order);
-}
-
 static __forceinline long
-atomic_load_long(const volatile atomic_long* obj, memory_order order)
+atomic_load_4(const volatile atomic_long* obj, memory_order order)
 {
     (void)order;
     int value = *obj;
@@ -789,26 +567,8 @@ atomic_load_long(const volatile atomic_long* obj, memory_order order)
     return value;
 }
 
-static __forceinline unsigned long
-atomic_load_ulong(const volatile atomic_ulong* obj, memory_order order)
-{
-    return atomic_load_long((const volatile atomic_long*)obj, order);
-}
-
-static __forceinline int
-atomic_load_int(const volatile atomic_int* obj, memory_order order)
-{
-    return atomic_load_long((const volatile atomic_long*)obj, order);
-}
-
-static __forceinline unsigned int
-atomic_load_uint(const volatile atomic_uint* obj, memory_order order)
-{
-    return atomic_load_long((const volatile atomic_long*)obj, order);
-}
-
 static __forceinline __int64
-atomic_load_llong(const volatile atomic_llong* obj, memory_order order)
+atomic_load_8(const volatile atomic_llong* obj, memory_order order)
 {
     (void)order;
 #if defined(_M_IX86)
@@ -862,102 +622,36 @@ atomic_load_llong(const volatile atomic_llong* obj, memory_order order)
     return value;
 }
 
-static __forceinline unsigned __int64
-atomic_load_ullong(const volatile atomic_ullong* obj, memory_order order)
-{
-    return atomic_load_llong((const volatile atomic_llong*)obj, order);
-}
-
-static __forceinline void*
-atomic_load_ptr(const volatile void* obj, memory_order order)
-{
-#if defined(_M_IX86)
-    return (void*)atomic_load_long((const volatile atomic_long*)obj
-        , order);
-#elif defined(_M_X64)
-    return (void*)atomic_load_llong((const volatile atomic_llong*)obj
-        , order);
-#endif /* defined(_M_IX86) */
-}
-
 /*
  *  atomic_exchange_explicit
  */
 
 static __forceinline char
-atomic_exchange_char(volatile atomic_char* obj, char desired
+atomic_exchange_1(volatile atomic_char* obj, char desired
     , memory_order order)
 {
     (void)order;
     return _InterlockedExchange8(obj, desired);
 }
 
-static __forceinline unsigned char
-atomic_exchange_uchar(volatile atomic_uchar* obj, unsigned char desired
-    , memory_order order)
-{
-    return atomic_exchange_char((volatile atomic_char*)obj, (char)desired
-        , order);
-}
-
-static __forceinline bool
-atomic_exchange_bool(volatile atomic_uchar* obj, bool desired
-    , memory_order order)
-{
-    return (bool)atomic_exchange_char((volatile atomic_char*)obj
-        , (char)desired, order);
-}
-
 static __forceinline short
-atomic_exchange_short(volatile atomic_short* obj, short desired
+atomic_exchange_2(volatile atomic_short* obj, short desired
     , memory_order order)
 {
     (void)order;
     return _InterlockedExchange16(obj, desired);
 }
 
-static __forceinline unsigned short
-atomic_exchange_ushort(volatile atomic_ushort* obj, unsigned short desired
-    , memory_order order)
-{
-    return atomic_exchange_short((volatile atomic_short*)obj
-        , (short)desired, order);
-}
-
 static __forceinline long
-atomic_exchange_long(volatile atomic_long* obj, long desired
+atomic_exchange_4(volatile atomic_long* obj, long desired
     , memory_order order)
 {
     (void)order;
     return _InterlockedExchange(obj, desired);
 }
 
-static __forceinline unsigned long
-atomic_exchange_ulong(volatile atomic_ulong* obj, unsigned long desired
-    , memory_order order)
-{
-    return atomic_exchange_long((volatile atomic_long*)obj
-        , (long)desired, order);
-}
-
-static __forceinline int
-atomic_exchange_int(volatile atomic_int* obj, int desired
-    , memory_order order)
-{
-    return atomic_exchange_long((volatile atomic_long*)obj
-        , (long)desired, order);
-}
-
-static __forceinline unsigned int
-atomic_exchange_uint(volatile atomic_uint* obj, unsigned int desired
-    , memory_order order)
-{
-    return atomic_exchange_long((volatile atomic_long*)obj
-        , (long)desired, order);
-}
-
 static __forceinline __int64
-atomic_exchange_llong(volatile atomic_llong* obj, __int64 desired
+atomic_exchange_8(volatile atomic_llong* obj, __int64 desired
     , memory_order order)
 {
     (void)order;
@@ -988,32 +682,12 @@ atomic_exchange_llong(volatile atomic_llong* obj, __int64 desired
 #endif /* defined(_M_IX86) */
 }
 
-static __forceinline unsigned __int64
-atomic_exchange_ullong(volatile atomic_ullong* obj
-    , unsigned __int64 desired, memory_order order)
-{
-    return atomic_exchange_llong((volatile atomic_llong*)obj
-        , (__int64)desired, order);
-}
-
-static __forceinline void*
-atomic_exchange_ptr(volatile void* obj, void* desired, memory_order order)
-{
-#if defined(_M_IX86)
-    return (void*)atomic_exchange_long((volatile atomic_long*)obj
-        , (long)desired, order);
-#elif defined(_M_X64)
-    return (void*)atomic_exchange_llong((volatile atomic_llong*)obj
-        , (__int64)desired, order);
-#endif /* defined(_M_IX86) */
-}
-
 /*
  *  atomic_compare_exchange_strong_explicit
  */
 
 static __forceinline bool
-atomic_compare_exchange_char(volatile atomic_char* obj, char* expected
+atomic_compare_exchange_1(volatile atomic_char* obj, char* expected
     , char desired, memory_order success, memory_order failure)
 {
     (void)success;
@@ -1024,16 +698,7 @@ atomic_compare_exchange_char(volatile atomic_char* obj, char* expected
 }
 
 static __forceinline bool
-atomic_compare_exchange_uchar(volatile atomic_uchar* obj
-    , unsigned char* expected, unsigned char desired, memory_order success
-    , memory_order failure)
-{
-    return atomic_compare_exchange_char((volatile atomic_char*)obj
-        , (char*)expected, (char)desired, success, failure);
-}
-
-static __forceinline bool
-atomic_compare_exchange_short(volatile atomic_short* obj, short* expected
+atomic_compare_exchange_2(volatile atomic_short* obj, short* expected
     , short desired, memory_order success, memory_order failure)
 {
     (void)success;
@@ -1044,16 +709,7 @@ atomic_compare_exchange_short(volatile atomic_short* obj, short* expected
 }
 
 static __forceinline bool
-atomic_compare_exchange_ushort(volatile atomic_ushort* obj
-    , unsigned short* expected, unsigned short desired
-    , memory_order success, memory_order failure)
-{
-    return atomic_compare_exchange_short((volatile atomic_short*)obj
-        , (short*)expected, (short)desired, success, failure);
-}
-
-static __forceinline bool
-atomic_compare_exchange_long(volatile atomic_long* obj, long* expected
+atomic_compare_exchange_4(volatile atomic_long* obj, long* expected
     , long desired, memory_order success, memory_order failure)
 {
     (void)success;
@@ -1064,33 +720,7 @@ atomic_compare_exchange_long(volatile atomic_long* obj, long* expected
 }
 
 static __forceinline bool
-atomic_compare_exchange_ulong(volatile atomic_ulong* obj
-    , unsigned long* expected, unsigned long desired, memory_order success
-    , memory_order failure)
-{
-    return atomic_compare_exchange_long((volatile atomic_long*)obj
-        , (long*)expected, (long)desired, success, failure);
-}
-
-static __forceinline bool
-atomic_compare_exchange_int(volatile atomic_int* obj, int* expected
-    , int desired, memory_order success, memory_order failure)
-{
-    return atomic_compare_exchange_long((volatile atomic_long*)obj
-        , (long*)expected, (long)desired, success, failure);
-}
-
-static __forceinline bool
-atomic_compare_exchange_uint(volatile atomic_uint* obj
-    , unsigned int* expected, unsigned int desired, memory_order success
-    , memory_order failure)
-{
-    return atomic_compare_exchange_long((volatile atomic_long*)obj
-        , (long*)expected, (long)desired, success, failure);
-}
-
-static __forceinline bool
-atomic_compare_exchange_llong(volatile atomic_llong* obj
+atomic_compare_exchange_8(volatile atomic_llong* obj
     , __int64* expected, __int64 desired, memory_order success
     , memory_order failure)
 {
@@ -1101,97 +731,36 @@ atomic_compare_exchange_llong(volatile atomic_llong* obj
     return (old == *expected);
 }
 
-static __forceinline bool
-atomic_compare_exchange_ullong(volatile atomic_ullong* obj
-    , unsigned __int64* expected, unsigned __int64 desired
-    , memory_order success, memory_order failure)
-{
-    return atomic_compare_exchange_llong((volatile atomic_llong*)obj
-        , (__int64*)expected, (__int64)desired, success, failure);
-}
-
-static __forceinline bool
-atomic_compare_exchange_ptr(volatile void* obj, void* expected
-    , void* desired, memory_order success, memory_order failure)
-{
-#if defined(_M_IX86)
-    return atomic_compare_exchange_long((volatile atomic_long*)obj
-        , (long*)expected, (long)desired, success, failure);
-#elif defined(_M_X64)
-    return atomic_compare_exchange_llong((volatile atomic_llong*)obj
-        , (__int64*)expected, (__int64)desired, success, failure);
-#endif /* defined(_M_IX86) */
-}
-
 /*
  *  atomic_fetch_add_explicit
  */
 
 static __forceinline char
-atomic_fetch_add_char(volatile atomic_char* obj, char op
+atomic_fetch_add_1(volatile atomic_char* obj, char op
     , memory_order order)
 {
     (void)order;
     return _InterlockedExchangeAdd8(obj, op);
 }
 
-static __forceinline unsigned char
-atomic_fetch_add_uchar(volatile atomic_uchar* obj, unsigned char op
-, memory_order order)
-{
-    return atomic_fetch_add_char((volatile atomic_char*)obj, (char)op
-        , order);
-}
-
 static __forceinline short
-atomic_fetch_add_short(volatile atomic_short* obj, short op
+atomic_fetch_add_2(volatile atomic_short* obj, short op
     , memory_order order)
 {
     (void)order;
     return _InterlockedExchangeAdd16(obj, op);
 }
 
-static __forceinline unsigned short
-atomic_fetch_add_ushort(volatile atomic_ushort* obj, unsigned short op
-    , memory_order order)
-{
-    return atomic_fetch_add_short((volatile atomic_short*)obj, (short)op
-        , order);
-}
-
 static __forceinline long
-atomic_fetch_add_long(volatile atomic_long* obj, long op
+atomic_fetch_add_4(volatile atomic_long* obj, long op
     , memory_order order)
 {
     (void)order;
     return _InterlockedExchangeAdd(obj, op);
 }
 
-static __forceinline unsigned long
-atomic_fetch_add_ulong(volatile atomic_ulong* obj, unsigned long op
-    , memory_order order)
-{
-    return atomic_fetch_add_long((volatile atomic_long*)obj, (long)op
-        , order);
-}
-
-static __forceinline int
-atomic_fetch_add_int(volatile atomic_int* obj, int op, memory_order order)
-{
-    return atomic_fetch_add_long((volatile atomic_long*)obj, (long)op
-        , order);
-}
-
-static __forceinline unsigned int
-atomic_fetch_add_uint(volatile atomic_uint* obj, unsigned int op
-    , memory_order order)
-{
-    return atomic_fetch_add_long((volatile atomic_long*)obj, (long)op
-        , order);
-}
-
 static __forceinline __int64
-atomic_fetch_add_llong(volatile atomic_llong* obj, __int64 op
+atomic_fetch_add_8(volatile atomic_llong* obj, __int64 op
     , memory_order order)
 {
     (void)order;
@@ -1204,83 +773,36 @@ atomic_fetch_add_llong(volatile atomic_llong* obj, __int64 op
 #endif /* defined(_M_IX86) */
 }
 
-static __forceinline unsigned __int64
-atomic_fetch_add_ullong(volatile atomic_ullong* obj, unsigned __int64 op
-    , memory_order order)
-{
-    return atomic_fetch_add_llong((volatile atomic_llong*)obj, (__int64)op
-        , order);
-}
-
 /*
  *  atomic_fetch_sub_explicit
  */
 
 static __forceinline char
-atomic_fetch_sub_char(volatile atomic_char* obj, char op
+atomic_fetch_sub_1(volatile atomic_char* obj, char op
     , memory_order order)
 {
     (void)order;
     return _InterlockedExchangeAdd8(obj, -op);
 }
 
-static __forceinline unsigned char
-atomic_fetch_sub_uchar(volatile atomic_uchar* obj, unsigned char op
-    , memory_order order)
-{
-    return atomic_fetch_sub_char((volatile atomic_char*)obj, (char)op
-        , order);
-}
-
 static __forceinline short
-atomic_fetch_sub_short(volatile atomic_short* obj, short op
+atomic_fetch_sub_2(volatile atomic_short* obj, short op
     , memory_order order)
 {
     (void)order;
     return _InterlockedExchangeAdd16(obj, -op);
 }
 
-static __forceinline unsigned short
-atomic_fetch_sub_ushort(volatile atomic_ushort* obj, unsigned short op
-    , memory_order order)
-{
-    return atomic_fetch_sub_short((volatile atomic_short*)obj, (short)op
-        , order);
-}
-
 static __forceinline long
-atomic_fetch_sub_long(volatile atomic_long* obj, long op
+atomic_fetch_sub_4(volatile atomic_long* obj, long op
     , memory_order order)
 {
     (void)order;
     return _InterlockedExchangeAdd(obj, -op);
 }
 
-static __forceinline unsigned long
-atomic_fetch_sub_ulong(volatile atomic_ulong* obj, unsigned long op
-    , memory_order order)
-{
-    return atomic_fetch_sub_long((volatile atomic_long*)obj, (long)op
-        , order);
-}
-
-static __forceinline int
-atomic_fetch_sub_int(volatile atomic_int* obj, int op, memory_order order)
-{
-    return atomic_fetch_sub_long((volatile atomic_long*)obj, (long)op
-        , order);
-}
-
-static __forceinline unsigned int
-atomic_fetch_sub_uint(volatile atomic_uint* obj, unsigned int op
-    , memory_order order)
-{
-    return atomic_fetch_sub_long((volatile atomic_long*)obj, (long)op
-        , order);
-}
-
 static __forceinline __int64
-atomic_fetch_sub_llong(volatile atomic_llong* obj, __int64 op
+atomic_fetch_sub_8(volatile atomic_llong* obj, __int64 op
     , memory_order order)
 {
     (void)order;
@@ -1293,83 +815,36 @@ atomic_fetch_sub_llong(volatile atomic_llong* obj, __int64 op
 #endif /* defined(_M_IX86) */
 }
 
-static __forceinline unsigned __int64
-atomic_fetch_sub_ullong(volatile atomic_ullong* obj, unsigned __int64 op
-    , memory_order order)
-{
-    return atomic_fetch_sub_llong((volatile atomic_llong*)obj, (__int64)op
-        , order);
-}
-
 /*
  *  atomic_fetch_or_explicit
  */
 
 static __forceinline char
-atomic_fetch_or_char(volatile atomic_char* obj, char op
+atomic_fetch_or_1(volatile atomic_char* obj, char op
     , memory_order order)
 {
     (void)order;
     return _InterlockedOr8(obj, op);
 }
 
-static __forceinline unsigned char
-atomic_fetch_or_uchar(volatile atomic_uchar* obj, unsigned char op
-    , memory_order order)
-{
-    return atomic_fetch_or_char((volatile atomic_char*)obj, (char)op
-        , order);
-}
-
 static __forceinline short
-atomic_fetch_or_short(volatile atomic_short* obj, short op
+atomic_fetch_or_2(volatile atomic_short* obj, short op
     , memory_order order)
 {
     (void)order;
     return _InterlockedOr16(obj, op);
 }
 
-static __forceinline unsigned short
-atomic_fetch_or_ushort(volatile atomic_ushort* obj, unsigned short op
-    , memory_order order)
-{
-    return atomic_fetch_or_short((volatile atomic_short*)obj, (short)op
-        , order);
-}
-
 static __forceinline long
-atomic_fetch_or_long(volatile atomic_long* obj, long op
+atomic_fetch_or_4(volatile atomic_long* obj, long op
     , memory_order order)
 {
     (void)order;
     return _InterlockedOr(obj, op);
 }
 
-static __forceinline unsigned long
-atomic_fetch_or_ulong(volatile atomic_ulong* obj, unsigned long op
-    , memory_order order)
-{
-    return atomic_fetch_or_long((volatile atomic_long*)obj, (long)op
-        , order);
-}
-
-static __forceinline int
-atomic_fetch_or_int(volatile atomic_int* obj, int op, memory_order order)
-{
-    return atomic_fetch_or_long((volatile atomic_long*)obj, (long)op
-        , order);
-}
-
-static __forceinline unsigned int
-atomic_fetch_or_uint(volatile atomic_uint* obj, unsigned int op
-    , memory_order order)
-{
-    return atomic_fetch_or_long((volatile atomic_long*)obj, (long)op
-        , order);
-}
-
 static __forceinline __int64
-atomic_fetch_or_llong(volatile atomic_llong* obj, __int64 op
+atomic_fetch_or_8(volatile atomic_llong* obj, __int64 op
     , memory_order order)
 {
     (void)order;
@@ -1382,83 +857,36 @@ atomic_fetch_or_llong(volatile atomic_llong* obj, __int64 op
 #endif /* defined(_M_IX86) */
 }
 
-static __forceinline unsigned __int64
-atomic_fetch_or_ullong(volatile atomic_ullong* obj, unsigned __int64 op
-    , memory_order order)
-{
-    return atomic_fetch_or_llong((volatile atomic_llong*)obj, (__int64)op
-        , order);
-}
-
 /*
  *  atomic_fetch_xor_explicit
  */
 
 static __forceinline char
-atomic_fetch_xor_char(volatile atomic_char* obj, char op
+atomic_fetch_xor_1(volatile atomic_char* obj, char op
     , memory_order order)
 {
     (void)order;
     return _InterlockedXor8(obj, op);
 }
 
-static __forceinline unsigned char
-atomic_fetch_xor_uchar(volatile atomic_uchar* obj, unsigned char op
-    , memory_order order)
-{
-    return atomic_fetch_xor_char((volatile atomic_char*)obj, (char)op
-        , order);
-}
-
 static __forceinline short
-atomic_fetch_xor_short(volatile atomic_short* obj, short op
+atomic_fetch_xor_2(volatile atomic_short* obj, short op
     , memory_order order)
 {
     (void)order;
     return _InterlockedXor16(obj, op);
 }
 
-static __forceinline unsigned short
-atomic_fetch_xor_ushort(volatile atomic_ushort* obj, unsigned short op
-    , memory_order order)
-{
-    return atomic_fetch_xor_short((volatile atomic_short*)obj, (short)op
-        , order);
-}
-
 static __forceinline long
-atomic_fetch_xor_long(volatile atomic_long* obj, long op
+atomic_fetch_xor_4(volatile atomic_long* obj, long op
     , memory_order order)
 {
     (void)order;
     return _InterlockedXor(obj, op);
 }
 
-static __forceinline unsigned long
-atomic_fetch_xor_ulong(volatile atomic_ulong* obj, unsigned long op
-    , memory_order order)
-{
-    return atomic_fetch_xor_long((volatile atomic_long*)obj, (long)op
-        , order);
-}
-
-static __forceinline int
-atomic_fetch_xor_int(volatile atomic_int* obj, int op, memory_order order)
-{
-    return atomic_fetch_xor_long((volatile atomic_long*)obj, (long)op
-        , order);
-}
-
-static __forceinline unsigned int
-atomic_fetch_xor_uint(volatile atomic_uint* obj, unsigned int op
-    , memory_order order)
-{
-    return atomic_fetch_xor_long((volatile atomic_long*)obj, (long)op
-        , order);
-}
-
 static __forceinline __int64
-atomic_fetch_xor_llong(volatile atomic_llong* obj, __int64 op
+atomic_fetch_xor_8(volatile atomic_llong* obj, __int64 op
     , memory_order order)
 {
     (void)order;
@@ -1471,83 +899,36 @@ atomic_fetch_xor_llong(volatile atomic_llong* obj, __int64 op
 #endif /* defined(_M_IX86) */
 }
 
-static __forceinline unsigned __int64
-atomic_fetch_xor_ullong(volatile atomic_ullong* obj, unsigned __int64 op
-    , memory_order order)
-{
-    return atomic_fetch_xor_llong((volatile atomic_llong*)obj, (__int64)op
-        , order);
-}
-
 /*
  *  atomic_fetch_and_explicit
  */
 
 static __forceinline char
-atomic_fetch_and_char(volatile atomic_char* obj, char op
+atomic_fetch_and_1(volatile atomic_char* obj, char op
     , memory_order order)
 {
     (void)order;
     return _InterlockedAnd8(obj, op);
 }
 
-static __forceinline unsigned char
-atomic_fetch_and_uchar(volatile atomic_uchar* obj, unsigned char op
-    , memory_order order)
-{
-    return atomic_fetch_and_char((volatile atomic_char*)obj, (char)op
-        , order);
-}
-
 static __forceinline short
-atomic_fetch_and_short(volatile atomic_short* obj, short op
+atomic_fetch_and_2(volatile atomic_short* obj, short op
     , memory_order order)
 {
     (void)order;
     return _InterlockedAnd16(obj, op);
 }
 
-static __forceinline unsigned short
-atomic_fetch_and_ushort(volatile atomic_ushort* obj, unsigned short op
-    , memory_order order)
-{
-    return atomic_fetch_and_short((volatile atomic_short*)obj, (short)op
-        , order);
-}
-
 static __forceinline long
-atomic_fetch_and_long(volatile atomic_long* obj, long op
+atomic_fetch_and_4(volatile atomic_long* obj, long op
     , memory_order order)
 {
     (void)order;
     return _InterlockedAnd(obj, op);
 }
 
-static __forceinline unsigned long
-atomic_fetch_and_ulong(volatile atomic_ulong* obj, unsigned long op
-    , memory_order order)
-{
-    return atomic_fetch_and_long((volatile atomic_long*)obj, (long)op
-        , order);
-}
-
-static __forceinline int
-atomic_fetch_and_int(volatile atomic_int* obj, int op, memory_order order)
-{
-    return atomic_fetch_and_long((volatile atomic_long*)obj, (long)op
-        , order);
-}
-
-static __forceinline unsigned int
-atomic_fetch_and_uint(volatile atomic_uint* obj, unsigned int op
-    , memory_order order)
-{
-    return atomic_fetch_and_long((volatile atomic_long*)obj, (long)op
-        , order);
-}
-
 static __forceinline __int64
-atomic_fetch_and_llong(volatile atomic_llong* obj, __int64 op
+atomic_fetch_and_8(volatile atomic_llong* obj, __int64 op
     , memory_order order)
 {
     (void)order;
@@ -1560,16 +941,6 @@ atomic_fetch_and_llong(volatile atomic_llong* obj, __int64 op
 #endif /* defined(_M_IX86) */
 }
 
-static __forceinline unsigned __int64
-atomic_fetch_and_ullong(volatile atomic_ullong* obj, unsigned __int64 op
-    , memory_order order)
-{
-    return atomic_fetch_and_llong((volatile atomic_llong*)obj, (__int64)op
-        , order);
-}
-
-#endif /* defined(USE_TEMPORARY_MSVC_WORKAROUND) */
-
-#undef USE_TEMPORARY_MSVC_WORKAROUND
+#endif /* defined(HAVE_STDATOMIC_H_WORKAROUND) */
 
 #endif /* __STDATOMIC_H__ */
