@@ -289,21 +289,21 @@ typedef _Atomic(uintmax_t)          atomic_uintmax_t;
     , desired, success, failure) \
     SUPPRESS_MSVC_OR_INTEL_WARNING \
     ((sizeof(*(obj)) == 1U) \
-    ? atomic_compare_exchange_1( \
-        (atomic_char*)(obj), (char*)(expected) \
-        , (char)(intptr_t)(desired), (success), (failure)) \
+    ? atomic_compare_exchange_1((atomic_char*)(obj) \
+        , (char*)(expected), (char)(intptr_t)(desired) \
+        , (success), (failure)) \
     : ((sizeof(*(obj)) == 2U) \
-    ? atomic_compare_exchange_2( \
-        (atomic_short*)(obj), (short*)(expected) \
-        , (short)(intptr_t)(desired), (success), (failure)) \
+    ? atomic_compare_exchange_2((atomic_short*)(obj) \
+        , (short*)(expected), (short)(intptr_t)(desired) \
+        , (success), (failure)) \
     : ((sizeof(*(obj)) == 4U) \
-    ? atomic_compare_exchange_4( \
-        (atomic_long*)(obj), (long*)(expected) \
-        , (long)(intptr_t)(desired), (success), (failure)) \
+    ? atomic_compare_exchange_4((atomic_long*)(obj) \
+        , (long*)(expected), (long)(intptr_t)(desired) \
+        , (success), (failure)) \
     : ((sizeof(*(obj)) == 8U) \
-    ? atomic_compare_exchange_8( \
-        (atomic_llong*)(obj), (__int64*)(expected) \
-        , (__int64)(desired), (success), (failure)) \
+    ? atomic_compare_exchange_8((atomic_llong*)(obj) \
+        , (__int64*)(expected), (__int64)(desired) \
+        , (success), (failure)) \
     : (assert(!"Invalid type"), 0)))))
 
 #define atomic_compare_exchange_weak_explicit \
