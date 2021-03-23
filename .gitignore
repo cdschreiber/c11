@@ -52,7 +52,5 @@ Mkfile.old
 dkms.conf
 
 # Local files
-.vscode/.vscode/c_cpp_properties.json
-.vscode/.vscode/settings.json
-.vscode/.vscode/tasks.json
+.vscode/*
 build/*
