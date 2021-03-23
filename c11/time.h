@@ -146,6 +146,6 @@ static inline int timespec_get(struct timespec* ts, int base)
 
 #endif /* defined(HAVE_TIME_H_WORKAROUND) */
 
-#endif /* HAVE_TIME_H_WORKAROUND */
+#undef HAVE_TIME_H_WORKAROUND
 
 #endif /* __TIME_H__ */
