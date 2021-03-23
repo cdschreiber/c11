@@ -505,4 +505,6 @@ int tss_set(tss_t key, void* val);
 
 #endif /* defined(HAVE_THREADS_H_WORKAROUND) */
 
+#undef HAVE_THREADS_H_WORKAROUND
+
 #endif /* __THREADS_H__ */

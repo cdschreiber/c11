@@ -950,4 +950,6 @@ atomic_fetch_and_8(volatile atomic_llong* obj, __int64 op
 
 #endif /* defined(HAVE_STDATOMIC_H_WORKAROUND) */
 
+#undef HAVE_STDATOMIC_H_WORKAROUND
+
 #endif /* __STDATOMIC_H__ */
